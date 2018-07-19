@@ -1,0 +1,100 @@
+Description: > 
+  Cloudformation of ECS Task Definition
+Parameters:
+  EnvironmentName:
+    Description: Environment Name that will prefix to each resource name
+    Type: String
+    Default: uat
+    AllowedValues:
+      - uat
+      - prod
+  ModuleName:
+    Description: Module name to tag to all resouces
+    Type: String
+  SubModuleName:
+    Description: Sub Module name to tag to all resouces
+    Type: String
+  DockerImageUrl:
+    Description: Docker Image Url or AWS Repository url
+    Type: String
+  Family:
+    Description: Family Group of the Task Definition
+    Type: String
+  ContainerName: 
+    Description: Container Name
+    Type: String
+  HardMemory:
+    Description: Hard Memory
+    Type: Number
+  SoftMemory:
+    Description: Soft Memory
+    Type: Number
+  CPUUnit:
+    Description: Allocated CPU Unit
+    Type: Number
+  StartupFileName:
+    Description: Startup file name
+    Type: String
+Conditions:
+  ProdExtraHosts: !Equals [ !Ref EnvironmentName, prod]
+Resources:
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ModuleName}-${SubModuleName}-${EnvironmentName}-task-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: "ecs-tasks.amazonaws.com"
+      Policies:
+        - PolicyName: ecs-tasks-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "*"
+                Resource: 
+                  - "*"
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['-', [!Sub "${ModuleName}-${SubModuleName}-${EnvironmentName}-ecs-logroup", !Ref 'AWS::StackName']]
+      RetentionInDays: 7
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref Family
+      TaskRoleArn: !Ref ECSTaskRole
+      NetworkMode: "bridge"
+      ContainerDefinitions:
+        - Name: !Ref ContainerName
+          Essential: true
+          Image: !Ref DockerImageUrl
+          Memory : !Ref HardMemory
+          MemoryReservation: !Ref SoftMemory
+          Cpu: !Ref CPUUnit
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 0
+          EntryPoint:
+            - "bash"
+            - !Ref StartupFileName
+          Environment:
+            - Name: "NODE_ENV"
+              Value: !If [ProdExtraHosts, "production", "staging"]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options: 
+              awslogs-group: !Ref CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+Outputs:
+  TaskDefinition:
+    Description: Task Definition Resource ID
+    Value: !Ref TaskDefinition
+  ContainerName:
+    Description: Container Name
+    Value: !Ref ContainerName

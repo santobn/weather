@@ -1,0 +1,17 @@
+<md-card flex-xs="100" flex-sm="35" flex-md="45"  flex-lg="30"  flex-xl="30"
+	ng-repeat="city in $ctrl.weathers">
+	<md-card-title>
+	  <md-card-title-media>
+		<div class="md-media-lg card-media">
+		<img ng-src="http://openweathermap.org/img/w/{{city.weather[0].icon}}.png" />
+		</div>
+	  </md-card-title-media>
+	  <md-card-title-text>
+		<span class="md-headline">{{city.name}}</span>
+		<span class="md-subhead">Long: {{city.coord.Lon}}</span
+		<span class="md-subhead">Lat: {{city.coord.Lat}}</span>
+		<span class="md-subhead">Temp: {{city.main.temp}}&deg;</span>
+		<span class="md-subhead">Updated: {{city.dt}}</span>
+	  </md-card-title-text>
+	</md-card-title>
+</md-card>

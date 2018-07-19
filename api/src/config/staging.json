@@ -1,0 +1,14 @@
+{
+	"OpenWeatherConfiguration": {
+		"TimeoutMs": 30000,
+		"Endpoint": "http://api.openweathermap.org/data/2.5/",
+		"AppId": "48d9140a4ce51cc42b85dac3fd93f973"
+	},
+    "RedisConfiguration" : {
+		"Host": "localhost",
+		"Port": "6379",
+		"Database": 2,
+		"Timeout": 5000,
+		"Max_Retry": 10
+	}
+}

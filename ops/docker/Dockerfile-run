@@ -1,0 +1,27 @@
+FROM node
+
+RUN apt-get update && apt-get install -y nginx
+
+RUN echo Asia/Singapore >/etc/timezone && dpkg-reconfigure -f noninteractive tzdata
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
+
+RUN rm /etc/nginx/nginx.conf
+COPY ./run/nginx.conf /etc/nginx
+
+COPY ./run/nginx /etc/logrotate.d/
+RUN chmod 644 /etc/logrotate.d/nginx
+
+WORKDIR /app/ui
+COPY ./ui/ .
+RUN npm install 
+
+WORKDIR /app/api
+COPY ./run/startup.sh .
+RUN chmod 755 startup.sh
+
+COPY ./api/ .
+RUN npm install 
+
+EXPOSE  3000 80

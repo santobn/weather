@@ -1,0 +1,159 @@
+Description: >
+  Cloudformation tempate to create ECS Service
+Parameters:
+  EnvironmentName:
+    Description: Environment Name that will prefix to each resource name
+    Type: String
+    Default: uat
+    AllowedValues:
+      - uat
+      - prod
+  ModuleName:
+    Description: Module name to tag to all resouces
+    Type: String
+  VPC:
+    Description: VPC
+    Type: AWS::EC2::VPC::Id
+  Cluster:
+    Description: Cluster the task should run at
+    Type: String
+  TaskCount:
+    Description: Number of tasks 
+    Type: Number
+    Default: 1
+  TaskDefinition:
+    Description: Task Definition name
+    Type: String
+  ServiceName:
+    Description: ECS Service name
+    Type: String
+  ContainerPort:
+    Description: Container Port 
+    Type: Number
+  ContainerName: 
+    Description: Container Name
+    Type: String
+  SubModuleName:
+    Description: Sub Module Name
+    Type: String
+  HealthCheckPath:
+    Description: Health Check Path
+    Type: String
+  PathPattern:
+    Description: Path Pattern
+    Type: String
+  ApplicationLoadBalancer:
+    Description: Application Load Balancer 
+    Type: String
+  HttpListener:
+    Description: Application Load Balancer listern
+    Type: String
+  HttpsListener:
+    Description: Application Load Balancer listern (HTTPS)
+    Type: String
+  Priority:
+    Description: Load Balancer Listener Rule
+    Type: Number
+Resources:
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${ModuleName}-${EnvironmentName}-${SubModuleName}
+      VpcId: !Ref VPC
+      Port: 80
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200-299
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: !Ref HealthCheckPath
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 12
+      HealthyThresholdCount: 5
+      Tags:
+        - Key: Name
+          Value: !Sub ${ModuleName}-${EnvironmentName}-${SubModuleName}
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Module
+          Value: micro-service
+  LoadBalancerListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - !Ref PathPattern
+      ListenerArn: !Ref HttpListener
+      Priority: !Ref Priority
+  LoadBalancerHttpsListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - !Ref PathPattern
+      ListenerArn: !Ref HttpsListener
+      Priority: !Ref Priority
+  ECSServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ModuleName}-${SubModuleName}-${EnvironmentName}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: 
+              Service: [ecs.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      Policies:
+        - PolicyName: !Sub ${ModuleName}-${SubModuleName}-${EnvironmentName}-ecs-service-role
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ec2:AuthorizeSecurityGroupIngress"
+                  - "ec2:Describe*"
+                  - "elasticloadbalancing:DeregisterInstancesFromLoadBalancer"
+                  - "elasticloadbalancing:Describe*"
+                  - "elasticloadbalancing:RegisterInstancesWithLoadBalancer"
+                  - "elasticloadbalancing:DeregisterTargets"
+                  - "elasticloadbalancing:DescribeTargetGroups"
+                  - "elasticloadbalancing:DescribeTargetHealth"
+                  - "elasticloadbalancing:RegisterTargets"
+                Resource: "*"
+              - Effect: Allow
+                Action: 
+                  - "ecs:DescribeServices"
+                  - "ecs:UpdateService"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - "cloudwatch:DescribeAlarms"
+                Resource: "*"
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref ServiceName 
+      Cluster: !Ref Cluster
+      Role: !Ref ECSServiceRole
+      DesiredCount: !Ref TaskCount
+      TaskDefinition: !Ref TaskDefinition
+      LoadBalancers:
+        - ContainerName: !Ref ContainerName
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup 
+
+Outputs:
+  Service:
+    Description: Service Resource ID
+    Value: !Ref Service
+  ServiceName:
+    Description: Service Name
+    Value: !Ref ServiceName
