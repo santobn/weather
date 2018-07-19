@@ -1,6 +1,6 @@
 FROM node
 
-RUN apt-get update && apt-get install -y nginx
+RUN apt-get update && apt-get install -y nginx && apt-get install -y redis-server
 
 RUN echo Asia/Singapore >/etc/timezone && dpkg-reconfigure -f noninteractive tzdata
 ENV LC_ALL en_US.UTF-8
@@ -8,6 +8,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
 RUN rm /etc/nginx/nginx.conf
+COPY ./run/mime.types /etc/nginx
 COPY ./run/nginx.conf /etc/nginx
 
 COPY ./run/nginx /etc/logrotate.d/

@@ -11,14 +11,11 @@ Parameters:
   ModuleName:
     Description: Module name to tag to all resouces
     Type: String
-  SubModuleName:
-    Description: Sub Module name to tag to all resouces
-    Type: String
   DockerImageUrl:
     Description: Docker Image Url or AWS Repository url
     Type: String
-  Family:
-    Description: Family Group of the Task Definition
+  ProjectName:
+    Description: ProjectName of the Task Definition
     Type: String
   ContainerName: 
     Description: Container Name
@@ -41,7 +38,7 @@ Resources:
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ModuleName}-${SubModuleName}-${EnvironmentName}-task-role
+      RoleName: !Sub ${ModuleName}-${EnvironmentName}-task-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -62,12 +59,12 @@ Resources:
   CloudWatchLogsGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Join ['-', [!Sub "${ModuleName}-${SubModuleName}-${EnvironmentName}-ecs-logroup", !Ref 'AWS::StackName']]
+      LogGroupName: !Join ['-', [!Sub "${ModuleName}-${EnvironmentName}-ecs-logroup", !Ref 'AWS::StackName']]
       RetentionInDays: 7
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Ref Family
+      Family: !Ref ProjectName
       TaskRoleArn: !Ref ECSTaskRole
       NetworkMode: "bridge"
       ContainerDefinitions:

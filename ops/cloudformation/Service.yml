@@ -33,9 +33,6 @@ Parameters:
   ContainerName: 
     Description: Container Name
     Type: String
-  SubModuleName:
-    Description: Sub Module Name
-    Type: String
   HealthCheckPath:
     Description: Health Check Path
     Type: String
@@ -48,9 +45,6 @@ Parameters:
   HttpListener:
     Description: Application Load Balancer listern
     Type: String
-  HttpsListener:
-    Description: Application Load Balancer listern (HTTPS)
-    Type: String
   Priority:
     Description: Load Balancer Listener Rule
     Type: Number
@@ -58,7 +52,7 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub ${ModuleName}-${EnvironmentName}-${SubModuleName}
+      Name: !Sub ${ModuleName}-${EnvironmentName}
       VpcId: !Ref VPC
       Port: 80
       Protocol: HTTP
@@ -71,7 +65,7 @@ Resources:
       HealthyThresholdCount: 5
       Tags:
         - Key: Name
-          Value: !Sub ${ModuleName}-${EnvironmentName}-${SubModuleName}
+          Value: !Sub ${ModuleName}-${EnvironmentName}
         - Key: Environment
           Value: !Ref EnvironmentName
         - Key: Module
@@ -88,22 +82,10 @@ Resources:
             - !Ref PathPattern
       ListenerArn: !Ref HttpListener
       Priority: !Ref Priority
-  LoadBalancerHttpsListenerRule:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-        - Type: forward
-          TargetGroupArn: !Ref TargetGroup
-      Conditions:
-        - Field: path-pattern
-          Values:
-            - !Ref PathPattern
-      ListenerArn: !Ref HttpsListener
-      Priority: !Ref Priority
   ECSServiceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ModuleName}-${SubModuleName}-${EnvironmentName}
+      RoleName: !Sub ${ModuleName}-${EnvironmentName}
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -112,7 +94,7 @@ Resources:
               Service: [ecs.amazonaws.com]
             Action: ['sts:AssumeRole']
       Policies:
-        - PolicyName: !Sub ${ModuleName}-${SubModuleName}-${EnvironmentName}-ecs-service-role
+        - PolicyName: !Sub ${ModuleName}-${EnvironmentName}-ecs-service-role
           PolicyDocument:
             Version: "2012-10-17"
             Statement:

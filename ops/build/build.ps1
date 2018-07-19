@@ -1,9 +1,9 @@
-Param([string]$version = "1.0.0.2")
+Param([string]$version = "1.0.0.4")
 
 #####################################
 $moduleName = "weather"
 $apiDir = "..\..\api\"
-$uiDir = "..\..\api\"
+$uiDir = "..\..\ui\"
 $buildDir = ".\$($moduleName)-build\"
 
 #clean existing $buildDir
@@ -41,18 +41,6 @@ cd $buildDir
 docker images "$($moduleName)-build" -q | % { docker rmi $_ -f }
 docker container prune -f
 docker build -f Dockerfile-run -t "$($moduleName)-build:$($version)" .
-
-# #compress
-# $compressAppFile="$($moduleName)-$($version).zip"
-# cd $currDir
-# If((test-path $compressAppFile))
-# {
-  # Remove-Item $compressAppFile -Force
-# }
-# Add-Type -assembly "system.io.compression.filesystem"
-# [io.compression.zipfile]::CreateFromDirectory($buildDir, $compressAppFile) 
-# aws s3 cp $compressAppFile s3://maxis-artifact/$moduleName/build/$compressAppFile
-# Move-Item -Path $compressAppFile -Destination $buildDir
 
 Write-Host "DONE Build - $($moduleName) - $($version) | $($compressAppFile)"
 $endKey = $host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown")
